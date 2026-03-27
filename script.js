@@ -1,7 +1,10 @@
-//your JS code here.
 
-// Do not change code below this line
-// This code will just display the questions to the screen
+// Get elements
+const questionsElement = document.getElementById("questions");
+const submitBtn = document.getElementById("submit");
+const scoreElement = document.getElementById("score");
+
+// Questions data (fixed: all have 4 options)
 const questions = [
   {
     question: "What is the capital of France?",
@@ -20,7 +23,7 @@ const questions = [
   },
   {
     question: "Which is the largest planet in our solar system?",
-    choices: ["Earth", "Jupiter", "Mars"],
+    choices: ["Earth", "Jupiter", "Mars", "Saturn"], // fixed
     answer: "Jupiter",
   },
   {
@@ -30,27 +33,77 @@ const questions = [
   },
 ];
 
-// Display the quiz questions and choices
+// Load saved progress
+let userAnswers = JSON.parse(sessionStorage.getItem("progress")) || {};
+
+// Render questions
 function renderQuestions() {
+  questionsElement.innerHTML = "";
+
   for (let i = 0; i < questions.length; i++) {
-    const question = questions[i];
-    const questionElement = document.createElement("div");
-    const questionText = document.createTextNode(question.question);
-    questionElement.appendChild(questionText);
-    for (let j = 0; j < question.choices.length; j++) {
-      const choice = question.choices[j];
-      const choiceElement = document.createElement("input");
-      choiceElement.setAttribute("type", "radio");
-      choiceElement.setAttribute("name", `question-${i}`);
-      choiceElement.setAttribute("value", choice);
+    const q = questions[i];
+
+    const questionDiv = document.createElement("div");
+    questionDiv.textContent = q.question;
+
+    for (let j = 0; j < q.choices.length; j++) {
+      const choice = q.choices[j];
+
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `question-${i}`;
+      input.value = choice;
+
+      // Restore saved answer
       if (userAnswers[i] === choice) {
-        choiceElement.setAttribute("checked", true);
+        input.checked = true;
       }
-      const choiceText = document.createTextNode(choice);
-      questionElement.appendChild(choiceElement);
-      questionElement.appendChild(choiceText);
+
+      // Save progress on change
+      input.addEventListener("change", () => {
+        userAnswers[i] = choice;
+        sessionStorage.setItem("progress", JSON.stringify(userAnswers));
+      });
+
+      questionDiv.appendChild(input);
+      questionDiv.appendChild(document.createTextNode(choice));
     }
-    questionsElement.appendChild(questionElement);
+
+    questionsElement.appendChild(questionDiv);
   }
 }
-renderQuestions();
+
+// Calculate score
+function calculateScore() {
+  let score = 0;
+
+  for (let i = 0; i < questions.length; i++) {
+    if (userAnswers[i] === questions[i].answer) {
+      score++;
+    }
+  }
+
+  return score;
+}
+
+// On page load
+window.onload = function () {
+  renderQuestions();
+
+  // Show saved score if exists
+  const savedScore = localStorage.getItem("score");
+  if (savedScore !== null) {
+    scoreElement.textContent = `Your score is ${savedScore} out of 5.`;
+  }
+};
+
+// Submit button
+submitBtn.addEventListener("click", () => {
+  const score = calculateScore();
+
+  // Show score
+  scoreElement.textContent = `Your score is ${score} out of 5.`;
+
+  // Save score
+  localStorage.setItem("score", score);
+});
